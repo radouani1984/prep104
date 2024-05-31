@@ -1,0 +1,192 @@
+Good morning everyone. Today, I will be discussing efficient resource management in the cloud DMZR
+
+Let's start with an overview of our presentation: 
+
+
+First of all We will delve into the mechanisms of resource allocation, examining key technologies like Kubernetes and Infrastructure as a Service (IaaS)
+
+Next We'll explore some of the critical challenges we face in resource management. This includes:
+Pod Eviction and Algorithm - Understanding how Kubernetes handles pod eviction and the algorithms behind it.
+Quality of Service (QoS) and Impact - Analyzing the impact of QoS on resource management and overall performance.
+VM Profiles and threshold - Looking at various VM profiles and their specific resource requirements.
+
+
+Third part of our presentation will be focused on Dyntrace, a tool we use for data collection and monitoring. 
+
+Finally, we will talk about strategies for finding the right edge in resource management, ensuring optimal performance and efficiency in our cloud environments.
+
+By the end of this presentation, you will have a comprehensive understanding of how we can manage cloud resources more effectively, the challenges we face, and the tools and strategies we can use to overcome these challenges.
+
+Let's dive right in
+
+
+2.
+
+Now, let's briefly explore how Kubernetes manages resources with namespaces and pods.
+
+Namespaces in Kubernetes provide a way to divide cluster resources among multiple users, creating virtual clusters within a physical cluster.
+
+Pods are the smallest deployable units in Kubernetes, consisting of one or more containers that share storage and network resources. Pods are scheduled based on CPU and memory requests, ensuring they have the necessary resources to operate efficiently.
+
+By defining clear CPU and memory requests and limits for each pod, Kubernetes ensures balanced and efficient resource allocation across the entire cluster.
+
+3.
+
+
+In IaaS, resources are not allocated to individual applications but to the entire ecosystem that includes the operating system, processes, and main applications.
+Efficient management of these resources ensures that the infrastructure can support the dynamic needs of applications, maintaining both performance and reliability.
+
+4.
+
+
+Before we delve into how we define resource limits, it's crucial to understand what happens if these configurations are not set properly.
+
+In a Kubernetes environment, a virtual machine (VM) is part of a cluster that hosts one or more pods. These pods carry out various tasks and workloads. However, certain events, such as memory pressure or CPU contention, can lead to the eviction of pods from a VM.
+
+When such events occur, Kubernetes must decide which pod or pods to evict to ensure the stability and performance of the remaining pods. This decision is based on specific criteria, which we will explore in the next slide.
+
+Understanding these scenarios helps us appreciate the importance of proper resource allocation and configuration
+
+5.
+
+Let's take a closer look at the Pod Eviction Algorithm in Kubernetes.
+
+The algorithm starts by checking for certain events, such as memory pressure, disk pressure, or network issues. These events trigger the eviction process to ensure the cluster remains stable.
+
+Next, it evaluates the conditions of each pod, including resource usage and QoS settings. If a pod is underperforming or exceeding resource limits, it may be selected for eviction.
+
+By systematically checking these conditions, Kubernetes ensures that the most critical pods remain active while less critical ones are evicted to free up resources.
+
+6.
+
+Next, let's discuss Quality of Service (QoS) classes and their impact on pod eviction. In our DMZR framework, most applications do not use pod priority, so we focus solely on QoS.
+
+There are three QoS classes:
+
+Guaranteed: Pods in this class have memory and CPU limits equal to their requests. They have the lowest probability of eviction because they are fully guaranteed the resources they request.
+
+Burstable: These pods have some resource limits set but not equal to their requests. Their eviction probability is medium, meaning they can be evicted if necessary but are more protected than the next class.
+
+BestEffort: Pods in this class have no memory or CPU requests or limits set. They have the highest probability of eviction since they do not reserve any guaranteed resources.
+
+By classifying pods into these QoS categories, Kubernetes can make more informed eviction decisions, ensuring that critical applications maintain the resources they need.
+
+Next, we'll discuss how these QoS classes influence the pod eviction process.
+
+
+7.
+
+Now, let's discuss the impact of QoS on resource allocation and utilization.
+
+The first graph, where all bars are blue, shows CPU resources for some applications with Guaranteed QoS. These applications have fixed CPU allocations, which ensures they get the resources they need but can be inefficient.
+
+The second graph below shows resource allocation for applications with Burstable QoS. Here, the red bars represent limits, and the yellow bars show actual usage. This allows for more flexible resource usage.
+
+In the larger graph on the right, we compare cluster resource utilization for Guaranteed QoS versus Mixed QoS (Burstable). With Guaranteed QoS, we need at least 7 VMs with 2 CPUs each. In contrast, with Burstable QoS, we need between 3 and 7 VMs with 2 CPUs each.
+
+The key takeaway is that Burstable QoS allows us to overcommit resources, accommodating other applications and optimizing VM usage. Guaranteed QoS, while reliable, can lead to resource underutilization.
+
+This demonstrates that Guaranteed QoS isn't always the best approach, especially when efficient resource management is critical.
+
+8.
+
+Now, let's switch to Infrastructure as a Service (IaaS) and discuss VM profiles in our DMZR framework.
+
+In DMZR, we have different VM profiles, ranging from 2 vCPUs with 8 GB of memory to 128 vCPUs with 512 GB of memory. The key question we face is: which VM profile should we choose for a given workload?
+
+When deciding whether to upgrade to the next VM profile, we consider several criteria:
+
+Current Resource Utilization: Are we maxing out the CPU and memory of the current VM?
+Application Performance Requirements: Does the application need more resources to run efficiently?
+Cost Efficiency: Is the cost of upgrading to a larger VM justified by the performance gains?
+By evaluating these factors, we can make informed decisions on whether to stick with the current VM or move to a more powerful profile, ensuring efficient resource management and optimal performance.
+
+Next, we'll discuss how we use Dyntrace for data collection to support these decisions.
+
+9.
+
+The next slide demonstrates why choosing a fixed threshold for making decisions is not always a good idea.
+
+In the first graph, we see what happens when we use a fixed threshold of 30% for each VM profile. This graph shows how 30% utilization translates into resource allocation across different VM profiles.
+
+The following two graphs illustrate the benefits of using dynamic thresholds based on VM profiles. By adjusting thresholds according to the specific characteristics and needs of each VM profile, we can make more informed and efficient decisions.
+
+Dynamic thresholds lead to better resource utilization and more efficient management, ensuring that we allocate resources effectively and avoid underutilizing or overcommitting VMs.
+
+Next, we will discuss how Dyntrace helps in data collection to support these dynamic decisions
+
+10.
+
+We use Dyntrace to collect our resource consumption data. Dyntrace offers several aggregation functions such as max, min, percentile values, average, and mean.
+
+It also introduces the concept of dimensions or density, meaning data is aggregated to represent a single point over a period of time. This helps us understand resource usage trends and make better decisions.
+
+11.
+These are the key metrics we collect for our IaaS environments using Dyntrace:
+
+CPU usage
+Available memory in bytes
+Total memory
+Used memory
+Available disk space
+Used disk space
+These metrics help us monitor and manage the performance and utilization of our infrastructure effectively
+
+12.
+
+Similarly, for Kubernetes, we collect these critical metrics:
+
+CPU usage of workloads
+CPU limits
+Memory limits
+CPU requests
+Memory requests
+Memory working set
+By collecting these metrics, we ensure that our Kubernetes clusters are performing optimally and can quickly address any resource allocation issues.
+
+
+13.
+
+In the third part of our presentation, we will discuss how to find the right edges for defining resource requests and limits.
+
+We have focused on two key metrics: the 90th percentile and the maximum. The 90th percentile is crucial because it helps us understand the resource usage pattern of the majority of our applications. It represents the value below which 90% of the observations fall, giving us a realistic picture of typical resource consumption without being skewed by outliers.
+
+By combining the 90th percentile with the maximum value, we can set effective resource limits. The maximum value helps us account for peak usage scenarios, ensuring that our systems can handle unexpected spikes in demand.
+
+This approach allows us to set resource requests based on the 90th percentile, ensuring efficient utilization, while setting limits closer to the maximum to safeguard against extreme cases. This balance helps in optimizing performance and cost-efficiency.
+
+14.
+
+Let's explore the relationship between the 90th percentile and the maximum value. When the 90th percentile is close to the maximum, it indicates that the application is running under high resource pressure. This scenario means that the application frequently reaches its resource limits, increasing the risk of running out of memory (OOM) and causing potential failures.
+
+In this graph, the usage and 90th percentile lines are almost touching the maximum limit, highlighting the high pressure on resources."
+
+
+15.
+
+
+If Max >>> Percentile 90 Slide:
+
+"Next, we consider a scenario where the maximum is much greater than the 90th percentile. This indicates that while there are occasional high peaks in resource usage, they are infrequent. Setting limits based on the maximum in such cases can lead to over-provisioning and inefficient resource utilization.
+
+In this graph, we see high and infrequent peaks. It's essential to review these peaks to understand their cause and determine if the resource allocation can be optimized.
+
+
+16.
+
+Finally, when the maximum is slightly higher than the 90th percentile, it suggests efficient resource usage. This balance means that most of the time, the application uses resources within the 90th percentile limit, but there is some buffer for occasional peaks.
+
+This graph shows a healthy relationship between the 90th percentile and the maximum, indicating efficient resource usage and providing a buffer for peak times without risking frequent resource limits.
+
+17.
+
+Before we move to the demo, let's discuss the custom thresholds we've set for each type of VM in our IaaS environment.
+
+For memory, disk, and CPU, we've defined specific thresholds based on capacity:
+
+Memory Thresholds: As the memory capacity increases, the threshold decreases, starting from 0.4 for 4 GB and going down to 0.1 for 512 GB.
+Disk Thresholds: Similarly, disk thresholds decrease with increased capacity, from 0.10 for 1,000 GB to 0.35 for 20,000 GB.
+CPU Thresholds: For CPU, the thresholds also vary with capacity, from 0.10 for 1 GB to 0.30 for 128 GB.
+These thresholds are tailored to ensure efficient resource utilization while providing a buffer to handle peak loads. By customizing thresholds based on VM profiles, we can optimize performance and cost-efficiency across our IaaS infrastructure.
+
+Now, let's move on to the demo to see how these principles are applied in practice
